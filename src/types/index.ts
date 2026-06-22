@@ -25,7 +25,7 @@ export interface Quest {
   xpValue: number
   completed: boolean
   completedAt: string | null
-  xpGained: number | undefined
+  xpGained?: number
   isCustom: boolean
 }
 

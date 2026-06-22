@@ -17,7 +17,7 @@ import {
   rerollQuest,
   createCustomQuest,
 } from '@/lib/questGeneration'
-import { applyXpGain, applySleepBuff } from '@/lib/xp'
+import { applyXpGain, applySleepBuff, reverseXpGain } from '@/lib/xp'
 import { DAILY_BAR_PTS, WEEKLY_BAR_PTS, MONTHLY_BAR_PTS } from '@/lib/barPoints'
 import { isNewDay, isNewWeek, isNewMonth, isSleepCheckInDue } from '@/lib/resets'
 
@@ -41,6 +41,7 @@ export interface AppState {
 
   // Quest actions
   completeQuest: (questId: string, tier: 'daily' | 'weekly' | 'monthly') => void
+  uncompleteQuest: (questId: string, tier: 'daily' | 'weekly' | 'monthly') => void
   rerollQuestById: (questId: string, tier: 'daily' | 'weekly' | 'monthly') => void
   addCustomQuest: (
     title: string,
@@ -113,28 +114,19 @@ export const useStore = create<AppState>()(
         const now = new Date().toISOString()
         const sleepActive = state.sleepBuff.active
 
+        // Phase 1: find the quest
         let completedQuest: Quest | undefined
-        let updatedDaily = state.dailyQuests
-        let updatedWeekly = state.weeklyQuests
-        let updatedMonthly = state.monthlyQuest
-
         if (tier === 'daily') {
           completedQuest = state.dailyQuests.find(q => q.id === questId)
-          updatedDaily = state.dailyQuests.map(q =>
-            q.id === questId ? { ...q, completed: true, completedAt: now } : q
-          )
         } else if (tier === 'weekly') {
           completedQuest = state.weeklyQuests.find(q => q.id === questId)
-          updatedWeekly = state.weeklyQuests.map(q =>
-            q.id === questId ? { ...q, completed: true, completedAt: now } : q
-          )
         } else if (tier === 'monthly' && state.monthlyQuest?.id === questId) {
           completedQuest = state.monthlyQuest
-          updatedMonthly = { ...state.monthlyQuest, completed: true, completedAt: now }
         }
 
         if (!completedQuest || completedQuest.completed) return
 
+        // Phase 2: compute XP (gainedXp must be known before building arrays)
         const rawXp = completedQuest.xpValue
         const gainedXp = applySleepBuff(rawXp, sleepActive)
         const { xp: newXp, level: newLevel } = applyXpGain(
@@ -143,8 +135,24 @@ export const useStore = create<AppState>()(
           gainedXp
         )
 
-        const leveled = newLevel > state.player.level
+        // Phase 3: build updated quest arrays with xpGained stored
+        let updatedDaily = state.dailyQuests
+        let updatedWeekly = state.weeklyQuests
+        let updatedMonthly = state.monthlyQuest
 
+        if (tier === 'daily') {
+          updatedDaily = state.dailyQuests.map(q =>
+            q.id === questId ? { ...q, completed: true, completedAt: now, xpGained: gainedXp } : q
+          )
+        } else if (tier === 'weekly') {
+          updatedWeekly = state.weeklyQuests.map(q =>
+            q.id === questId ? { ...q, completed: true, completedAt: now, xpGained: gainedXp } : q
+          )
+        } else {
+          updatedMonthly = { ...completedQuest, completed: true, completedAt: now, xpGained: gainedXp }
+        }
+
+        const leveled = newLevel > state.player.level
         const barStat = completedQuest.stat as keyof Omit<MonthlyBar, 'month'>
         const updatedBar = {
           ...state.monthlyBar,
@@ -166,6 +174,74 @@ export const useStore = create<AppState>()(
             },
           },
           pendingLevelUp: leveled ? newLevel : state.pendingLevelUp,
+        })
+      },
+
+      uncompleteQuest: (questId: string, tier: 'daily' | 'weekly' | 'monthly') => {
+        const state = get()
+        if (!state.player) return
+
+        let completedQuest: Quest | undefined
+        let updatedDaily = state.dailyQuests
+        let updatedWeekly = state.weeklyQuests
+        let updatedMonthly = state.monthlyQuest
+
+        if (tier === 'daily') {
+          completedQuest = state.dailyQuests.find(q => q.id === questId)
+          updatedDaily = state.dailyQuests.map(q =>
+            q.id === questId
+              ? { ...q, completed: false, completedAt: null, xpGained: undefined }
+              : q
+          )
+        } else if (tier === 'weekly') {
+          completedQuest = state.weeklyQuests.find(q => q.id === questId)
+          updatedWeekly = state.weeklyQuests.map(q =>
+            q.id === questId
+              ? { ...q, completed: false, completedAt: null, xpGained: undefined }
+              : q
+          )
+        } else if (tier === 'monthly' && state.monthlyQuest?.id === questId) {
+          completedQuest = state.monthlyQuest
+          updatedMonthly = {
+            ...state.monthlyQuest,
+            completed: false,
+            completedAt: null,
+            xpGained: undefined,
+          }
+        }
+
+        if (!completedQuest || !completedQuest.completed) return
+
+        const gainedXp = completedQuest.xpGained ?? 0
+        const { xp: newXp, level: newLevel } = reverseXpGain(
+          state.player.xp,
+          state.player.level,
+          gainedXp
+        )
+
+        const barStat = completedQuest.stat as keyof Omit<MonthlyBar, 'month'>
+
+        set({
+          dailyQuests: updatedDaily,
+          weeklyQuests: updatedWeekly,
+          monthlyQuest: updatedMonthly,
+          monthlyBar: {
+            ...state.monthlyBar,
+            [barStat]: Math.max(0, state.monthlyBar[barStat] - completedQuest.barPoints),
+          },
+          player: {
+            ...state.player,
+            xp: newXp,
+            level: newLevel,
+            careerStats: {
+              ...state.player.careerStats,
+              [barStat]: Math.max(0, state.player.careerStats[barStat] - completedQuest.barPoints),
+            },
+          },
+          pendingLevelUp:
+            state.pendingLevelUp !== null && newLevel < state.pendingLevelUp
+              ? null
+              : state.pendingLevelUp,
         })
       },
 
