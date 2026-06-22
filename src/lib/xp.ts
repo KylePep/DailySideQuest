@@ -11,6 +11,24 @@ export function applySleepBuff(xp: number, sleepBuffActive: boolean): number {
   return Math.floor(xp * 1.2)
 }
 
+export function reverseXpGain(
+  currentXp: number,
+  currentLevel: number,
+  gainedXp: number
+): { xp: number; level: number } {
+  let xp = currentXp - gainedXp
+  let level = currentLevel
+
+  while (xp < 0 && level > 1) {
+    level--
+    xp += xpToNextLevel(level)
+  }
+
+  if (xp < 0) xp = 0
+
+  return { xp, level }
+}
+
 export function applyXpGain(
   currentXp: number,
   currentLevel: number,

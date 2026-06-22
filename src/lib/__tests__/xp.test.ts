@@ -1,4 +1,4 @@
-import { xpToNextLevel, applySleepBuff, applyXpGain } from '@/lib/xp'
+import { xpToNextLevel, applySleepBuff, applyXpGain, reverseXpGain } from '@/lib/xp'
 
 describe('xpToNextLevel', () => {
   it('level 1 requires 100 xp', () => {
@@ -45,5 +45,34 @@ describe('applyXpGain', () => {
   it('can level up multiple times from a single gain', () => {
     const result = applyXpGain(0, 1, 500)
     expect(result.level).toBeGreaterThan(2)
+  })
+})
+
+describe('reverseXpGain', () => {
+  it('subtracts xp without changing level when result stays positive', () => {
+    const result = reverseXpGain(80, 1, 30)
+    expect(result.xp).toBe(50)
+    expect(result.level).toBe(1)
+  })
+
+  it('de-levels and restores xp when subtraction goes negative', () => {
+    // at level 2 with 5 xp, undo 50 xp → xp goes to -45, de-level to 1
+    // level 1 threshold = 100, so restored xp = 100 - 45 = 55
+    const result = reverseXpGain(5, 2, 50)
+    expect(result.level).toBe(1)
+    expect(result.xp).toBe(xpToNextLevel(1) - 45)
+  })
+
+  it('floors at level 1 and xp 0 when gainedXp exceeds all accumulated xp', () => {
+    const result = reverseXpGain(0, 1, 999)
+    expect(result.level).toBe(1)
+    expect(result.xp).toBe(0)
+  })
+
+  it('can de-level multiple times', () => {
+    const atLevel3 = applyXpGain(0, 1, 300)
+    const reversed = reverseXpGain(atLevel3.xp, atLevel3.level, 300)
+    expect(reversed.level).toBe(1)
+    expect(reversed.xp).toBe(0)
   })
 })
