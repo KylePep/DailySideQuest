@@ -110,6 +110,12 @@ The progress bar in `Onboarding.tsx` updates from 4 segments to 5.
 
 `Onboarding.tsx` gains a `mode` state variable defaulting to `'hard'`. It is collected at step 2 and passed into `finish()` as part of the `Player` object.
 
+### File renames
+
+Existing components shift up to keep numbering consistent with step index:
+- `OnboardingStep3Class.tsx` → `OnboardingStep4Class.tsx`
+- `OnboardingStep4Explain.tsx` → `OnboardingStep5Explain.tsx`
+
 ### New component: `OnboardingStep3Mode.tsx`
 
 Three cards in the same visual style as the class selector:
