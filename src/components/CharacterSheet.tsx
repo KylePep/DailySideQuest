@@ -4,6 +4,7 @@ import { useStore } from '@/store'
 import { getAvatar } from '@/lib/avatars'
 import { xpToNextLevel } from '@/lib/xp'
 import StatBar from '@/components/StatBar'
+import { isPreferredStat } from '@/lib/barPoints'
 import type { Stat } from '@/types'
 
 const STATS: Stat[] = ['health', 'stamina', 'mana']
@@ -57,8 +58,8 @@ export default function CharacterSheet() {
         />
       </div>
 
-      <div className="flex flex-col gap-3 items-start">
-        {STATS.map(stat => (
+      <div className="flex flex-col gap-3 items-start w-full">
+        {[...STATS].sort((a, b) => +isPreferredStat(player.playerClass, b) - +isPreferredStat(player.playerClass, a)).map(stat => (
           <StatBar
             key={stat}
             stat={stat}
