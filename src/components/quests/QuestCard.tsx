@@ -29,7 +29,16 @@ const STAT_ICONS: Record<string, string> = {
 
 export default function QuestCard({ quest, tier }: Props) {
   const completeQuest = useStore(s => s.completeQuest)
+  const uncompleteQuest = useStore(s => s.uncompleteQuest)
   const rerollQuestById = useStore(s => s.rerollQuestById)
+
+  function handleToggle() {
+    if (quest.completed) {
+      uncompleteQuest(quest.id, tier)
+    } else {
+      completeQuest(quest.id, tier)
+    }
+  }
 
   return (
     <div
@@ -41,16 +50,22 @@ export default function QuestCard({ quest, tier }: Props) {
     >
       <div className="flex items-start gap-3">
         <button
-          disabled={quest.completed}
-          onClick={() => completeQuest(quest.id, tier)}
-          className={`mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 transition ${
+          onClick={handleToggle}
+          className={`group mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 transition ${
             quest.completed
-              ? 'border-gray-600 bg-gray-600'
+              ? 'border-gray-600 bg-gray-600 hover:border-red-500 hover:bg-red-900/30'
               : 'border-gray-500 hover:border-white hover:bg-white/10'
           }`}
         >
           {quest.completed && (
-            <span className="flex h-full w-full items-center justify-center text-[10px] text-white">✓</span>
+            <>
+              <span className="flex h-full w-full items-center justify-center text-[10px] text-white group-hover:hidden">
+                ✓
+              </span>
+              <span className="hidden h-full w-full items-center justify-center text-[10px] text-red-400 group-hover:flex">
+                ✕
+              </span>
+            </>
           )}
         </button>
 
