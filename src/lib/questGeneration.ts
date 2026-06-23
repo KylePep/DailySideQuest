@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid'
-import type { PlayerClass, Quest, QuestTemplate, Stat, QuestTier } from '@/types'
+import type { PlayerClass, Quest, QuestTemplate, Stat, QuestTier, QuestMode } from '@/types'
 import { getTemplatesByStatAndTier, QUEST_LIBRARY } from '@/lib/questLibrary'
+import { getFunTemplatesByStatAndTier, FUN_QUEST_LIBRARY } from '@/lib/funQuestLibrary'
 import { DAILY_BAR_PTS, WEEKLY_BAR_PTS, MONTHLY_BAR_PTS } from '@/lib/barPoints'
 
 const CLASS_PRIMARY: Record<PlayerClass, Stat> = {
@@ -28,6 +29,7 @@ function templateToQuest(template: QuestTemplate): Quest {
     completed: false,
     completedAt: null,
     isCustom: false,
+    xpGained: undefined,
   }
 }
 
@@ -36,51 +38,63 @@ function secondaryStat(primary: Stat): Stat {
   return pickRandom(others)
 }
 
-export function generateDailyQuests(playerClass: PlayerClass): Quest[] {
+function getPool(mode: QuestMode, stat: Stat, tier: QuestTier): QuestTemplate[] {
+  if (mode === 'fun') return getFunTemplatesByStatAndTier(stat, tier)
+  if (mode === 'hard') return getTemplatesByStatAndTier(stat, tier)
+  // medium: 50/50 coin flip per slot
+  return Math.random() < 0.5
+    ? getTemplatesByStatAndTier(stat, tier)
+    : getFunTemplatesByStatAndTier(stat, tier)
+}
+
+export function generateDailyQuests(playerClass: PlayerClass, mode: QuestMode = 'hard'): Quest[] {
   const primary = CLASS_PRIMARY[playerClass]
   const secondary = secondaryStat(primary)
   const tertiary = ALL_STATS.find(s => s !== primary && s !== secondary)!
 
-  const primaryPool = getTemplatesByStatAndTier(primary, 'daily')
-  const secondaryPool = getTemplatesByStatAndTier(secondary, 'daily')
-  const tertiaryPool = getTemplatesByStatAndTier(tertiary, 'daily')
-
   const chosen: QuestTemplate[] = []
 
-  const p1 = pickRandom(primaryPool)
+  const p1Pool = getPool(mode, primary, 'daily')
+  const p1 = pickRandom(p1Pool)
   chosen.push(p1)
-  const p2 = pickRandom(primaryPool.filter(t => t.id !== p1.id))
-  chosen.push(p2)
-  chosen.push(pickRandom(secondaryPool))
-  chosen.push(pickRandom(tertiaryPool))
+
+  const p2Pool = getPool(mode, primary, 'daily').filter(t => t.id !== p1.id)
+  chosen.push(pickRandom(p2Pool))
+  chosen.push(pickRandom(getPool(mode, secondary, 'daily')))
+  chosen.push(pickRandom(getPool(mode, tertiary, 'daily')))
 
   return chosen.map(templateToQuest)
 }
 
-export function generateWeeklyQuests(playerClass: PlayerClass): Quest[] {
+export function generateWeeklyQuests(playerClass: PlayerClass, mode: QuestMode = 'hard'): Quest[] {
   return ALL_STATS.map(stat => {
-    const pool = getTemplatesByStatAndTier(stat, 'weekly')
+    const pool = getPool(mode, stat, 'weekly')
     return templateToQuest(pickRandom(pool))
   })
 }
 
-export function generateMonthlyQuest(playerClass: PlayerClass): Quest {
+export function generateMonthlyQuest(playerClass: PlayerClass, mode: QuestMode = 'hard'): Quest {
   const primary = CLASS_PRIMARY[playerClass]
-  const pool = getTemplatesByStatAndTier(primary, 'monthly')
+  const pool = getPool(mode, primary, 'monthly')
   return templateToQuest(pickRandom(pool))
 }
 
 export function rerollQuest(quest: Quest, activeQuests: Quest[]): Quest {
   const activeTemplateIds = new Set(activeQuests.map(q => q.templateId))
-  const pool = QUEST_LIBRARY.filter(
+  const isFunQuest = quest.templateId.startsWith('f')
+  const source = isFunQuest ? FUN_QUEST_LIBRARY : QUEST_LIBRARY
+
+  const pool = source.filter(
     t => t.tier === quest.tier && t.stat === quest.stat && !activeTemplateIds.has(t.id)
   )
 
   if (pool.length === 0) {
-    const fallback = QUEST_LIBRARY.filter(
+    const fallback = source.filter(
       t => t.tier === quest.tier && t.stat === quest.stat && t.id !== quest.templateId
     )
-    return templateToQuest(pickRandom(fallback.length > 0 ? fallback : QUEST_LIBRARY.filter(t => t.tier === quest.tier)))
+    return templateToQuest(
+      pickRandom(fallback.length > 0 ? fallback : source.filter(t => t.tier === quest.tier))
+    )
   }
 
   return templateToQuest(pickRandom(pool))
@@ -115,5 +129,6 @@ export function createCustomQuest(
     completed: false,
     completedAt: null,
     isCustom: true,
+    xpGained: undefined,
   }
 }

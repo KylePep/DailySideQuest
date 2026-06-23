@@ -136,3 +136,60 @@ describe('createCustomQuest', () => {
     expect(q.completed).toBe(false)
   })
 })
+
+describe('generateDailyQuests — mode', () => {
+  it('fun mode: all templateIds start with f', () => {
+    const quests = generateDailyQuests('knight', 'fun')
+    quests.forEach(q => expect(q.templateId.startsWith('f')).toBe(true))
+  })
+
+  it('hard mode: no templateIds start with f', () => {
+    const quests = generateDailyQuests('knight', 'hard')
+    quests.forEach(q => expect(q.templateId.startsWith('f')).toBe(false))
+  })
+
+  it('medium mode: returns 4 quests', () => {
+    const quests = generateDailyQuests('knight', 'medium')
+    expect(quests).toHaveLength(4)
+  })
+})
+
+describe('generateWeeklyQuests — mode', () => {
+  it('fun mode: all templateIds start with f', () => {
+    const quests = generateWeeklyQuests('knight', 'fun')
+    quests.forEach(q => expect(q.templateId.startsWith('f')).toBe(true))
+  })
+
+  it('hard mode: no templateIds start with f', () => {
+    const quests = generateWeeklyQuests('knight', 'hard')
+    quests.forEach(q => expect(q.templateId.startsWith('f')).toBe(false))
+  })
+})
+
+describe('generateMonthlyQuest — mode', () => {
+  it('fun mode: templateId starts with f', () => {
+    const quest = generateMonthlyQuest('knight', 'fun')
+    expect(quest.templateId.startsWith('f')).toBe(true)
+  })
+
+  it('hard mode: templateId does not start with f', () => {
+    const quest = generateMonthlyQuest('knight', 'hard')
+    expect(quest.templateId.startsWith('f')).toBe(false)
+  })
+})
+
+describe('rerollQuest — pool detection', () => {
+  it('rerolls a fun quest within the fun pool', () => {
+    const quests = generateDailyQuests('knight', 'fun')
+    const original = quests[0]
+    const rerolled = rerollQuest(original, quests)
+    expect(rerolled.templateId.startsWith('f')).toBe(true)
+  })
+
+  it('rerolls a hard quest within the hard pool', () => {
+    const quests = generateDailyQuests('knight', 'hard')
+    const original = quests[0]
+    const rerolled = rerollQuest(original, quests)
+    expect(rerolled.templateId.startsWith('f')).toBe(false)
+  })
+})
