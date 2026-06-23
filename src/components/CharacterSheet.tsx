@@ -15,6 +15,18 @@ const CLASS_NAMES: Record<string, string> = {
   bard: 'Bard',
 }
 
+const MODE_LABELS: Record<string, string> = {
+  fun: '🎮 Fun',
+  medium: '⚖️ Medium',
+  hard: '💀 Hard',
+}
+
+const MODE_COLORS: Record<string, string> = {
+  fun: 'bg-amber-900/60 text-amber-300',
+  medium: 'bg-violet-900/60 text-violet-300',
+  hard: 'bg-slate-800 text-slate-300',
+}
+
 export default function CharacterSheet() {
   const player = useStore(s => s.player)
   const monthlyBar = useStore(s => s.monthlyBar)
@@ -41,8 +53,13 @@ export default function CharacterSheet() {
               </span>
             )}
           </div>
-          <div className="text-sm text-gray-400">
-            {CLASS_NAMES[player.playerClass]} · Level {player.level}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-gray-400">
+              {CLASS_NAMES[player.playerClass]} · Level {player.level}
+            </span>
+            <span className={`rounded-md px-2 py-0.5 text-xs ${MODE_COLORS[player.mode]}`}>
+              {MODE_LABELS[player.mode]}
+            </span>
           </div>
         </div>
       </div>
