@@ -4,6 +4,8 @@ export type PlayerClass = 'knight' | 'wizard' | 'bard'
 
 export type QuestTier = 'daily' | 'weekly' | 'monthly'
 
+export type QuestMode = 'fun' | 'medium' | 'hard'
+
 export interface QuestTemplate {
   id: string
   title: string
@@ -39,6 +41,7 @@ export interface Player {
   name: string
   avatarId: string
   playerClass: PlayerClass
+  mode: QuestMode
   level: number
   xp: number
   careerStats: PlayerStats
