@@ -9,6 +9,7 @@ import type {
   Onboarding,
   Resets,
   Stat,
+  QuestMode,
 } from '@/types'
 import {
   generateDailyQuests,
@@ -35,6 +36,7 @@ export interface AppState {
   // Onboarding actions
   completeOnboarding: (player: Player) => void
   setOnboardingStep: (step: number) => void
+  setPlayerMode: (mode: QuestMode) => void
 
   // Sleep buff actions
   acknowledgeSleep: (sleptWell: boolean) => void
@@ -79,12 +81,13 @@ export const useStore = create<AppState>()(
 
       completeOnboarding: (player: Player) => {
         const playerClass = player.playerClass
+        const mode = player.mode
         set({
           player,
           onboarding: { completed: true, step: 5 },
-          dailyQuests: generateDailyQuests(playerClass),
-          weeklyQuests: generateWeeklyQuests(playerClass),
-          monthlyQuest: generateMonthlyQuest(playerClass),
+          dailyQuests: generateDailyQuests(playerClass, mode),
+          weeklyQuests: generateWeeklyQuests(playerClass, mode),
+          monthlyQuest: generateMonthlyQuest(playerClass, mode),
           monthlyBar: emptyMonthlyBar(),
           resets: {
             lastDay: new Date().toISOString(),
@@ -96,6 +99,12 @@ export const useStore = create<AppState>()(
 
       setOnboardingStep: (step: number) => {
         set(state => ({ onboarding: { ...state.onboarding, step } }))
+      },
+
+      setPlayerMode: (mode: QuestMode) => {
+        set(state => ({
+          player: state.player ? { ...state.player, mode } : null,
+        }))
       },
 
       acknowledgeSleep: (sleptWell: boolean) => {
@@ -287,12 +296,13 @@ export const useStore = create<AppState>()(
 
         const { resets } = state
         const playerClass = state.player.playerClass
+        const mode = state.player.mode
         let updates: Partial<AppState> = {}
 
         if (isNewMonth(resets.lastMonth)) {
           updates = {
             ...updates,
-            monthlyQuest: generateMonthlyQuest(playerClass),
+            monthlyQuest: generateMonthlyQuest(playerClass, mode),
             monthlyBar: emptyMonthlyBar(),
             resets: {
               ...resets,
@@ -304,7 +314,7 @@ export const useStore = create<AppState>()(
         if (isNewWeek(resets.lastWeek)) {
           updates = {
             ...updates,
-            weeklyQuests: generateWeeklyQuests(playerClass),
+            weeklyQuests: generateWeeklyQuests(playerClass, mode),
             resets: {
               ...(updates.resets ?? resets),
               lastWeek: new Date().toISOString(),
@@ -315,7 +325,7 @@ export const useStore = create<AppState>()(
         if (isNewDay(resets.lastDay)) {
           updates = {
             ...updates,
-            dailyQuests: generateDailyQuests(playerClass),
+            dailyQuests: generateDailyQuests(playerClass, mode),
             resets: {
               ...(updates.resets ?? resets),
               lastDay: new Date().toISOString(),
