@@ -4,7 +4,7 @@ import { DAILY_BAR_PTS, WEEKLY_BAR_PTS, MONTHLY_BAR_PTS } from '@/lib/barPoints'
 const DAILY_XP = 10
 const WEEKLY_XP = 40
 const MONTHLY_XP = 140
-
+// The fun quests
 export const FUN_QUEST_LIBRARY: QuestTemplate[] = [
   // ─── HEALTH DAILY (15) ───────────────────────────────────────────────────
   { id: 'fhd01', title: 'Try a Handstand', description: 'Find a wall and practice a handstand, or work toward one from where you are.', stat: 'health', tier: 'daily', barPoints: DAILY_BAR_PTS, xpValue: DAILY_XP },
