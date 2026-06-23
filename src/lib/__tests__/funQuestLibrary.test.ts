@@ -11,6 +11,10 @@ describe('FUN_QUEST_LIBRARY', () => {
     FUN_QUEST_LIBRARY.forEach(t => expect(hardIds.has(t.id)).toBe(false))
   })
 
+  it('hard library IDs never start with f (pool detection invariant)', () => {
+    QUEST_LIBRARY.forEach(t => expect(t.id.startsWith('f')).toBe(false))
+  })
+
   it('all entries have required fields', () => {
     FUN_QUEST_LIBRARY.forEach(t => {
       expect(t.id).toBeTruthy()

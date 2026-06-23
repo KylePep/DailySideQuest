@@ -102,6 +102,7 @@ export const useStore = create<AppState>()(
       },
 
       setPlayerMode: (mode: QuestMode) => {
+        // mode takes effect at next reset — does not immediately reroll the active board
         set(state => ({
           player: state.player ? { ...state.player, mode } : null,
         }))

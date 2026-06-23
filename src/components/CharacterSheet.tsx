@@ -34,6 +34,7 @@ export default function CharacterSheet() {
 
   if (!player) return null
 
+  const playerMode = player.mode ?? 'hard'
   const avatar = getAvatar(player.avatarId)
   const xpNeeded = xpToNextLevel(player.level)
   const xpPercent = Math.min(100, Math.round((player.xp / xpNeeded) * 100))
@@ -57,8 +58,8 @@ export default function CharacterSheet() {
             <span className="text-sm text-gray-400">
               {CLASS_NAMES[player.playerClass]} · Level {player.level}
             </span>
-            <span className={`rounded-md px-2 py-0.5 text-xs ${MODE_COLORS[player.mode]}`}>
-              {MODE_LABELS[player.mode]}
+            <span className={`rounded-md px-2 py-0.5 text-xs ${MODE_COLORS[playerMode]}`}>
+              {MODE_LABELS[playerMode]}
             </span>
           </div>
         </div>

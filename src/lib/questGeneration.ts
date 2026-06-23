@@ -58,7 +58,7 @@ export function generateDailyQuests(playerClass: PlayerClass, mode: QuestMode = 
   const p1 = pickRandom(p1Pool)
   chosen.push(p1)
 
-  const p2Pool = getPool(mode, primary, 'daily').filter(t => t.id !== p1.id)
+  const p2Pool = p1Pool.filter(t => t.id !== p1.id)
   chosen.push(pickRandom(p2Pool))
   chosen.push(pickRandom(getPool(mode, secondary, 'daily')))
   chosen.push(pickRandom(getPool(mode, tertiary, 'daily')))
@@ -93,7 +93,7 @@ export function rerollQuest(quest: Quest, activeQuests: Quest[]): Quest {
       t => t.tier === quest.tier && t.stat === quest.stat && t.id !== quest.templateId
     )
     return templateToQuest(
-      pickRandom(fallback.length > 0 ? fallback : source.filter(t => t.tier === quest.tier))
+      pickRandom(fallback.length > 0 ? fallback : source.filter(t => t.tier === quest.tier && t.stat === quest.stat))
     )
   }
 
